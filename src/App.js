@@ -46,7 +46,7 @@ function App() {
 
   return (
     <div style={{ textAlign: "center", margin: "20px" }}>
-      <h1>Create Your Business Card</h1>
+      <h1>QRCARD: Your Business Identity in a QR Code</h1>
 
       <div style={styles.formContainer}>
         <input type="text" name="designation" placeholder="Designation" onChange={handleChange} />
