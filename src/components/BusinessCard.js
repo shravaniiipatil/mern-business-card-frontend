@@ -53,7 +53,7 @@ const BusinessCard = ({ formData }) => {
         {formData.profilePic && (
           <img src={formData.profilePic} alt="Profile" style={styles.profilePic} />
         )}
-        <QRCodeCanvas value={qrCodeValue} size={70} />
+        <QRCodeCanvas value={qrCodeValue} size={75} /> {/* Reduced QR size */}
       </div>
     </div>
   );
@@ -61,8 +61,8 @@ const BusinessCard = ({ formData }) => {
 
 const styles = {
   card: {
-    width: "500px",
-    height: "300px",
+    width: "480px",  // Increased width from 500px to 600px
+    height: "290px",
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
@@ -80,6 +80,7 @@ const styles = {
     gap: "0px", // Reduced spacing
   },
   rightSection: {
+    flex: 0,  // Ensures proper spacing for QR and image
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -90,14 +91,14 @@ const styles = {
     width: "80px",
     height: "110px",
     borderRadius: "0px",
-    objectFit: "cover",
+    objectFit: "contain",  // Ensures image fits without cutting
     marginBottom: "15px",
   },
   name: {
     color: "orangered",
     fontFamily: "'Poppins', sans-serif",
     fontStyle: "italic",
-    fontSize: "24px",
+    fontSize: "22px",
     fontWeight: "bold",
     letterSpacing: "0px",
     marginBottom: "0px",
