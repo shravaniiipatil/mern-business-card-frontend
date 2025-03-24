@@ -1,6 +1,6 @@
 import React from "react";
 import { QRCodeCanvas } from "qrcode.react";
-import { FaPhone, FaEnvelope, FaMapMarkerAlt } from "react-icons/fa"; 
+import { FaPhone, FaEnvelope, FaMapMarkerAlt } from "react-icons/fa";
 
 const BusinessCard = ({ formData }) => {
   const qrCodeValue = `
@@ -13,38 +13,47 @@ const BusinessCard = ({ formData }) => {
 
   return (
     <div style={styles.card}>
-      {/* Left Section: Profile Image & QR Code */}
+      {/* Left Section: Text Details */}
       <div style={styles.leftSection}>
-        {formData.profilePic && (
-          <img src={formData.profilePic} alt="Profile" style={styles.profilePic} />
-        )}
-        <QRCodeCanvas value={qrCodeValue} size={70} />
-      </div>
-
-      {/* Right Section: Text Details */}
-      <div style={styles.rightSection}>
         <p style={styles.name}>{formData.name || "Your Name"}</p>
         <p style={styles.title}>{formData.designation || "Your Designation"}</p>
-        <p style={styles.regNo}>{formData.regNo || "Enter Registration No"}</p>
-        <p style={styles.education}>{formData.education || "Your Education"}</p>
+        <p style={styles.regNo}> {formData.regNo || "Enter Registration No"}</p>
+        <p style={styles.education}> {formData.education || "Your Education"}</p>
 
         {(formData.contact1 || formData.contact2) && (
-          <p style={styles.textRight}>
-            <FaPhone style={styles.icon} /> {formData.contact1 || ""}{formData.contact1 && formData.contact2 ? ", " : ""}{formData.contact2 || ""}
+          <p style={styles.textLeft}>
+            <FaPhone style={styles.icon} /> <strong>Contact:</strong> {formData.contact1 || ""}{formData.contact1 && formData.contact2 ? ", " : ""}{formData.contact2 || ""}
           </p>
         )}
 
         {formData.email && formData.email.trim() !== "" && (
-          <p style={styles.textRight}><FaEnvelope style={styles.icon} /> {formData.email}</p>
-        )}
-
-        {formData.address && formData.address.trim() !== "" && (
-          <p style={styles.textRight}><FaMapMarkerAlt style={styles.icon} /> {formData.address}</p>
+          <p style={styles.textLeft}>
+            <FaEnvelope style={styles.icon} /> <strong>Email:</strong> {formData.email}
+          </p>
         )}
 
         {formData.specialties && formData.specialties.trim() !== "" && (
-          <p style={styles.specialties}>{formData.specialties}</p>
+          <p style={styles.specialties}> {formData.specialties}</p>
         )}
+
+        {formData.address && formData.address.trim() !== "" && (
+          <p style={styles.textLeft}>
+            <FaMapMarkerAlt style={styles.icon} /> <strong>Office:</strong> {formData.address}
+          </p>
+        )}
+
+        {/* Footer Section with Shravani's Name */}
+        <footer style={styles.footer}>
+          <p>Designed by <strong>Shravani Shrikant Patil</strong></p>
+        </footer>
+      </div>
+
+      {/* Right Section: Profile Image & QR Code */}
+      <div style={styles.rightSection}>
+        {formData.profilePic && (
+          <img src={formData.profilePic} alt="Profile" style={styles.profilePic} />
+        )}
+        <QRCodeCanvas value={qrCodeValue} size={70} />
       </div>
     </div>
   );
@@ -52,80 +61,97 @@ const BusinessCard = ({ formData }) => {
 
 const styles = {
   card: {
-    width: "500px", // ✅ Compact width
-    height: "300px", // ✅ Compact height
+    width: "500px",
+    height: "300px",
     display: "flex",
-    flexDirection: "row", // ✅ Aligning items in a row
+    flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#F8F8F8",
-    padding: "5px", // ✅ Minimal padding
+    padding: "10px",
     borderRadius: "5px",
     boxShadow: "0 2px 3px rgba(0, 0, 0, 0.1)",
     border: "1px solid grey",
   },
   leftSection: {
+    flex: 1,
+    textAlign: "left",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0px", // Reduced spacing
+  },
+  rightSection: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: "10px", // ✅ Space between image and text
+    marginLeft: "10px",
   },
   profilePic: {
-    width: "80px", // ✅ Smaller profile pic
-    height: "110px", 
-    borderRadius: "5px",
+    width: "80px",
+    height: "110px",
+    borderRadius: "0px",
     objectFit: "cover",
-    border: "0px solid #333",
-    marginBottom: "5px",
-  },
-  rightSection: {
-    flex: 1,
-    textAlign: "left", // ✅ Align text to the left
-    display: "flex",
-    flexDirection: "column",
-    gap: "0px", // ✅ No extra space between text elements
+    marginBottom: "15px",
   },
   name: {
     color: "orangered",
-    fontSize: "23px",
+    fontFamily: "'Poppins', sans-serif",
+    fontStyle: "italic",
+    fontSize: "24px",
     fontWeight: "bold",
+    letterSpacing: "0px",
     marginBottom: "0px",
+    textTransform: "uppercase",
+    textShadow: "1px 1px 2px black",
   },
   title: {
     color: "brown",
     fontWeight: "bold",
-    fontSize: "18px",
+    fontSize: "20px",
     marginBottom: "0px",
+    textShadow: "1px 1px 2px gray",
   },
   regNo: {
-    fontSize: "15px",
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: "12px",
+    color: "#333333",
     marginBottom: "0px",
+    textShadow: "1px 1px 2px pink",
   },
   education: {
-    fontSize: "15px",
+    fontSize: "14px",
     fontWeight: "bold",
     color: "#002D62",
     marginBottom: "0px",
+    textShadow: "1px 1px 2px yellow",
   },
   specialties: {
-    backgroundColor: "hotpink",
-    padding: "2px",
-    borderRadius: "0px",
+    backgroundColor: "#8B0000",
+    padding: "3px 8px",
+    borderRadius: "2px",
     fontWeight: "bold",
-    fontSize: "13px",
-    color: "#333",
-    marginBottom: "0px",
-  },
-  textRight: {
-    textAlign: "left", // ✅ Align text left for readability
     fontSize: "12px",
-    marginBottom: "0px",
+    color: "white",
+    textAlign: "center",
+    marginBottom: "5px",
+    textShadow: "1px 1px 2px gray",
+  },
+  textLeft: {
+    textAlign: "left",
+    fontSize: "12px",
+    marginBottom: "2px",
+    textShadow: "0.5px 0.5px 1px gray",
   },
   icon: {
     marginRight: "5px",
     color: "#007BFF",
+  },
+  footer: {
+    textAlign: "center",
+    fontSize: "8px",
+    color: "gray",
+    marginTop: "0px",
+    padding: "2px",
+    borderTop: "0px solid #ddd",
   },
 };
 
