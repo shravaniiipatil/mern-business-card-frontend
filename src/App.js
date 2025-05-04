@@ -6,9 +6,14 @@ import BusinessCard from "./components/BusinessCard";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+ const handleLogout = () => {
+    localStorage.removeItem("loggedInEmail"); // Clear localStorage or session data
+    setIsAuthenticated(false); // Update the authentication state to false
+  };
   return (
     <Router>
-      {isAuthenticated && <Navbar />}
+{isAuthenticated && <Navbar onLogout={handleLogout} />}
+
       <Routes>
         <Route path="/" element={<LoginPage onLogin={() => setIsAuthenticated(true)} />} />
         <Route path="/home" element={<HomePage />} />
@@ -20,20 +25,70 @@ function App() {
   );
 }
 
-// 🔐 Login Page
 function LoginPage({ onLogin }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSignup, setIsSignup] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  // Default email and password stored directly in the code
+  const defaultEmail = "admin@example.com";
+  const defaultPassword = "admin123";
+
+  // Regular expression for validating email format
+  const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (email === "admin@example.com" && password === "admin123") {
+
+    // Check if the entered credentials match the default admin email/password
+    if (email === defaultEmail && password === defaultPassword) {
+      // Store the logged-in email to localStorage
+      localStorage.setItem("loggedInEmail", email);
       onLogin();
       navigate("/home");
     } else {
-      setError("Invalid credentials. Try admin@example.com / admin123");
+      // Check for signed-up users in localStorage
+      const savedUser = localStorage.getItem("user");
+      if (savedUser) {
+        const { storedEmail, storedPassword } = JSON.parse(savedUser);
+        if (email === storedEmail && password === storedPassword) {
+          // If the user matches a signed-up user, allow login
+          localStorage.setItem("loggedInEmail", email);
+          onLogin();
+          navigate("/home");
+        } else {
+          setError("Invalid credentials. Please try again.");
+        }
+      } else {
+        setError("No users found. Please sign up first.");
+      }
+    }
+  };
+
+  const handleSignup = (e) => {
+    e.preventDefault();
+
+    // Validate the email format
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    if (password === confirmPassword) {
+      const user = {
+        storedEmail: email,
+        storedPassword: password,
+      };
+      // Store the signed-up user in localStorage
+      localStorage.setItem("user", JSON.stringify(user));
+      setError("");
+      alert("Signup successful! Please log in.");
+      setIsSignup(false);
+    } else {
+      setError("Passwords do not match.");
     }
   };
 
@@ -41,46 +96,148 @@ function LoginPage({ onLogin }) {
     <div style={loginStyles.page}>
       <div style={loginStyles.card}>
         <h2>🔐 Welcome to <span style={{ color: "#007BFF" }}>QRCARD</span></h2>
-        <form onSubmit={handleLogin} style={loginStyles.form}>
-          <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} style={loginStyles.input} />
-          <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} style={loginStyles.input} />
+        <form onSubmit={isSignup ? handleSignup : handleLogin} style={loginStyles.form}>
+          <input 
+            type="email" 
+            placeholder="Email" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+            style={loginStyles.input} 
+          />
+          <input 
+            type="password" 
+            placeholder="Password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            style={loginStyles.input} 
+          />
+          {isSignup && (
+            <input 
+              type="password" 
+              placeholder="Confirm Password" 
+              value={confirmPassword} 
+              onChange={(e) => setConfirmPassword(e.target.value)} 
+              style={loginStyles.input} 
+            />
+          )}
           {error && <p style={loginStyles.error}>{error}</p>}
-          <button type="submit" style={loginStyles.button}>Login</button>
+          <button 
+            type="submit" 
+            style={loginStyles.button} 
+            onMouseEnter={(e) => e.target.style = { ...loginStyles.button, ...loginStyles.buttonHover }} 
+            onMouseLeave={(e) => e.target.style = loginStyles.button}
+          >
+            {isSignup ? "Sign Up" : "Login"}
+          </button>
         </form>
+        <p 
+          style={loginStyles.toggleText} 
+          onClick={() => {
+            setIsSignup(!isSignup);
+            setError("");
+            setEmail("");
+            setPassword("");
+            setConfirmPassword("");
+          }}
+        >
+          {isSignup ? "Already have an account? Login" : "Don't have an account? Sign Up"}
+        </p>
       </div>
     </div>
   );
 }
 
-// 🧭 Navbar
-function Navbar() {
+
+
+function Navbar({ onLogout }) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout(); // Call the onLogout function passed from App
+      navigate("/"); // Redirect to the login page
+    } else {
+      console.error("onLogout function is not passed correctly!");
+    }
+  };
+
   return (
     <nav style={navStyles.container}>
-      <Link to="/home" style={navStyles.link}>Home</Link>
-      <Link to="/about" style={navStyles.link}>About</Link>
-      <Link to="/create-card" style={navStyles.link}>Create Card</Link>
-      <Link to="/saved-cards" style={navStyles.link}>Saved Cards</Link>
+      <Link
+        to="/home"
+        style={navStyles.link}
+        onMouseEnter={(e) => e.target.style = { ...navStyles.link, ...navStyles.linkHover }}
+        onMouseLeave={(e) => e.target.style = navStyles.link}
+      >
+        Home
+      </Link>
+      <Link
+        to="/about"
+        style={navStyles.link}
+        onMouseEnter={(e) => e.target.style = { ...navStyles.link, ...navStyles.linkHover }}
+        onMouseLeave={(e) => e.target.style = navStyles.link}
+      >
+        About
+      </Link>
+      <Link
+        to="/create-card"
+        style={navStyles.link}
+        onMouseEnter={(e) => e.target.style = { ...navStyles.link, ...navStyles.linkHover }}
+        onMouseLeave={(e) => e.target.style = navStyles.link}
+      >
+        Create Card
+      </Link>
+      <Link
+        to="/saved-cards"
+        style={navStyles.link}
+        onMouseEnter={(e) => e.target.style = { ...navStyles.link, ...navStyles.linkHover }}
+        onMouseLeave={(e) => e.target.style = navStyles.link}
+      >
+        Saved Cards
+      </Link>
+      <button
+        onClick={handleLogout}
+        style={navStyles.logoutButton}
+      >
+        Logout
+      </button>
     </nav>
   );
 }
 
+
 // 🏠 Home Page
 function HomePage() {
+  const [hovered, setHovered] = useState(null);
+
   return (
     <div style={homePageStyles.page}>
       <h1 style={homePageStyles.title}>Welcome to QRCARD</h1>
       <p style={homePageStyles.subtitle}>Create and manage your digital business card effortlessly!</p>
+
       <div style={homePageStyles.featuresContainer}>
-        <div style={homePageStyles.feature}>
-          <h3>Create & Customize</h3>
+        <div
+          style={hovered === 1 ? { ...homePageStyles.feature, ...homePageStyles.featureHover } : homePageStyles.feature}
+          onMouseEnter={() => setHovered(1)}
+          onMouseLeave={() => setHovered(null)}
+        >
+          <h2><u>Create & Customize</u></h2>
           <p>Design your personalized digital business card with your details and a professional look.</p>
         </div>
-        <div style={homePageStyles.feature}>
-          <h3>Share Instantly</h3>
+        <div
+          style={hovered === 2 ? { ...homePageStyles.feature, ...homePageStyles.featureHover } : homePageStyles.feature}
+          onMouseEnter={() => setHovered(2)}
+          onMouseLeave={() => setHovered(null)}
+        >
+          <h2><u>Share Instantly</u></h2>
           <p>Generate a QR code and share your card with others, making networking more effective.</p>
         </div>
-        <div style={homePageStyles.feature}>
-          <h3>Download & Save</h3>
+        <div
+          style={hovered === 3 ? { ...homePageStyles.feature, ...homePageStyles.featureHover } : homePageStyles.feature}
+          onMouseEnter={() => setHovered(3)}
+          onMouseLeave={() => setHovered(null)}
+        >
+          <h2><u>Download & Save</u></h2>
           <p>Download your card as an image and keep it saved for future use. It's that simple!</p>
         </div>
       </div>
@@ -90,6 +247,8 @@ function HomePage() {
 
 // ℹ️ About Page
 function AboutPage() {
+  const [hovered, setHovered] = useState(null);
+
   return (
     <div style={aboutPageStyles.page}>
       <h1 style={aboutPageStyles.title}>About QRCARD</h1>
@@ -99,8 +258,12 @@ function AboutPage() {
         Our goal is to help professionals and businesses enhance their networking through a modern, eco-friendly digital solution.
       </p>
       <div style={aboutPageStyles.featuresContainer}>
-        <div style={aboutPageStyles.feature}>
-          <h3>Why Choose QRCARD?</h3>
+        <div
+          style={hovered === 1 ? { ...aboutPageStyles.feature, ...aboutPageStyles.featureHover } : aboutPageStyles.feature}
+          onMouseEnter={() => setHovered(1)}
+          onMouseLeave={() => setHovered(null)}
+        >
+          <h2>Why Choose QRCARD?</h2>
           <ul>
             <li>Instant digital card generation</li>
             <li>Customizable with your unique details</li>
@@ -109,14 +272,19 @@ function AboutPage() {
             <li>Environmentally friendly—no need for physical cards</li>
           </ul>
         </div>
-        <div style={aboutPageStyles.feature}>
-          <h3>Our Mission</h3>
+        <div
+          style={hovered === 2 ? { ...aboutPageStyles.feature, ...aboutPageStyles.featureHover } : aboutPageStyles.feature}
+          onMouseEnter={() => setHovered(2)}
+          onMouseLeave={() => setHovered(null)}
+        >
+          <h2><u>Our Mission</u></h2>
           <p>Our mission is to empower individuals and businesses with a smart and sustainable solution for managing business cards in the digital age.</p>
         </div>
       </div>
     </div>
   );
 }
+
 
 // 🎨 Create Business Card Page
 function BusinessCardPage() {
@@ -172,42 +340,115 @@ function BusinessCardPage() {
     <div style={pageStyle}>
       <h1>Create Your Digital Business Card</h1>
       <div style={formStyles.container}>
-        <input type="text" name="designation" placeholder="Designation" onChange={handleChange} />
-        <input type="text" name="name" placeholder="Full Name" onChange={handleChange} />
-        <input type="text" name="education" placeholder="Education" onChange={handleChange} />
-        <input type="text" name="regNo" placeholder="Registration Number" onChange={handleChange} />
-        <input type="text" name="contact1" placeholder="Primary Contact Number" onChange={handleChange} />
-        <input type="text" name="contact2" placeholder="Alternate Contact Number" onChange={handleChange} />
-        <input type="email" name="email" placeholder="Email Address" onChange={handleChange} />
-        <textarea name="specialties" placeholder="Specialties (Comma Separated)" onChange={handleChange}></textarea>
-        <input type="text" name="address" placeholder="Office Address" onChange={handleChange} />
-        <input type="file" accept="image/*" onChange={handleImageUpload} />
+        <input
+          style={formStyles.input}
+          type="text"
+          name="designation"
+          placeholder="Designation"
+          onChange={handleChange}
+        />
+        <input
+          style={formStyles.input}
+          type="text"
+          name="name"
+          placeholder="Full Name"
+          onChange={handleChange}
+        />
+        <input
+          style={formStyles.input}
+          type="text"
+          name="education"
+          placeholder="Education"
+          onChange={handleChange}
+        />
+        <input
+          style={formStyles.input}
+          type="text"
+          name="regNo"
+          placeholder="Registration Number"
+          onChange={handleChange}
+        />
+        <input
+          style={formStyles.input}
+          type="text"
+          name="contact1"
+          placeholder="Primary Contact Number"
+          onChange={handleChange}
+        />
+        <input
+          style={formStyles.input}
+          type="text"
+          name="contact2"
+          placeholder="Alternate Contact Number"
+          onChange={handleChange}
+        />
+        <input
+          style={formStyles.input}
+          type="email"
+          name="email"
+          placeholder="Email Address"
+          onChange={handleChange}
+        />
+        <textarea
+          style={formStyles.textarea}
+          name="specialties"
+          placeholder="Specialties (Comma Separated)"
+          onChange={handleChange}
+        />
+        <input
+          style={formStyles.input}
+          type="text"
+          name="address"
+          placeholder="Office Address"
+          onChange={handleChange}
+        />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+        />
         <h3>Preview:</h3>
-        <div ref={cardRef}><BusinessCard formData={formData} /></div>
-        <button onClick={handleDownload} style={formStyles.button}>Download Card</button>
+        <div ref={cardRef}>
+          <BusinessCard formData={formData} />
+        </div>
+        <button
+          onClick={handleDownload}
+          style={formStyles.button}
+          onMouseEnter={(e) => e.target.style = { ...formStyles.button, ...formStyles.buttonHover }}
+          onMouseLeave={(e) => e.target.style = formStyles.button}
+        >
+          Download Card
+        </button>
       </div>
     </div>
   );
 }
 
+
 // 💾 Saved Cards Page with Search/Filter and Delete Option
 function SavedCardsPage() {
   const [savedCards, setSavedCards] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const userEmail = localStorage.getItem("loggedInEmail");  // Get logged-in user's email
 
   useEffect(() => {
     const cards = JSON.parse(localStorage.getItem("savedCards")) || [];
     setSavedCards(cards);
   }, []);
 
-  // Function to delete a card
   const handleDeleteCard = (cardIndex) => {
-    const updatedCards = savedCards.filter((_, index) => index !== cardIndex);
-    localStorage.setItem("savedCards", JSON.stringify(updatedCards));
-    setSavedCards(updatedCards);
+    const cardToDelete = savedCards[cardIndex];
+
+    // Allow deletion if the logged-in user is either the admin or the card owner
+    if (userEmail === "admin@example.com" || cardToDelete.ownerEmail === userEmail) {
+      const updatedCards = savedCards.filter((_, index) => index !== cardIndex);
+      localStorage.setItem("savedCards", JSON.stringify(updatedCards));
+      setSavedCards(updatedCards);
+    } else {
+      alert("You are not authorized to delete this card.");
+    }
   };
 
-  // Filter cards based on search query
   const filteredCards = savedCards.filter(card => 
     card.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     card.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -218,7 +459,6 @@ function SavedCardsPage() {
     <div style={pageStyle}>
       <h1>📚 Saved Business Cards</h1>
       
-      {/* Search bar */}
       <input 
         type="text" 
         placeholder="Search by Name, Email, or Contact" 
@@ -238,12 +478,15 @@ function SavedCardsPage() {
               <p>{card.email}</p>
               <p>{card.contact1}</p>
               <p style={{ fontSize: "12px", color: "#888" }}>Created on: {card.createdAt}</p>
-              {/* Delete Button */}
-              <button 
-                onClick={() => handleDeleteCard(index)} 
-                style={cardStyles.deleteButton}>
-                Delete
-              </button>
+              
+              {/* Display delete button if the logged-in user is either the owner or admin */}
+              {(userEmail === "admin@example.com" || card.ownerEmail === userEmail) && (
+                <button 
+                  onClick={() => handleDeleteCard(index)} 
+                  style={cardStyles.deleteButton}>
+                  Delete
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -252,98 +495,340 @@ function SavedCardsPage() {
   );
 }
 
+
+
+
+
 // ✨ Styles
-const navStyles = {
+// Navbar Styles
+export const navStyles = {
   container: {
-    display: "flex", gap: "20px", padding: "15px",
-    backgroundColor: "#007BFF", justifyContent: "center", color: "#fff",
+    display: 'flex',
+    gap: '20px',
+    padding: '15px',
+    backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+    color: '#fff',
+    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+    flexWrap: 'wrap',
+    fontFamily: '"Roboto", sans-serif',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   link: {
-    color: "#fff", textDecoration: "none", fontWeight: "bold", fontSize: "16px",
+    color: 'white',
+    textDecoration: 'none',
+    fontWeight: '500',
+    fontSize: '16px',
+    transition: 'all 0.3s ease',
+    padding: '10px',
+    borderRadius: '8px',
+    fontFamily: '"Roboto", sans-serif',
+    flexShrink: 0,
+  },
+  linkHover: {
+    color: '#FFD700',
+    backgroundColor: '#444',
+  },
+  logoutButton: {
+    marginLeft: 'auto',
+    backgroundColor: '#dc3545',
+    color: '#fff',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontWeight: '700', // Bold
+    fontSize: '18px',  // Slightly increased
+    transition: 'background-color 0.3s ease',
   }
 };
 
+
+
+export const cardStyles = {
+  card: {
+    width: "300px", 
+    padding: "20px", 
+    borderRadius: "10px", 
+    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)", 
+    transition: "transform 0.3s ease, box-shadow 0.3s ease",  // Smooth transition effects
+    cursor: "pointer", 
+    backgroundColor: "#f9f9f9",  // Light gray background
+    marginBottom: "20px",  // Space between cards
+    fontFamily: '"Roboto", sans-serif',  // Consistent font for text inside cards
+    flexShrink: 0,  // Prevent card from shrinking
+    border: '2px solid black',  // Add border around each saved card
+    borderRadius: '10px',  // Maintain rounded corners for a professional look
+  },
+  cardHover: {
+    transform: "scale(1.05)",  // Slightly enlarge card on hover for interactivity
+    boxShadow: "0 6px 15px rgba(0, 0, 0, 0.2)",  // More pronounced shadow on hover
+  },
+  deleteButton: {
+    padding: "8px", 
+    backgroundColor: "#FF5733",  // Vibrant red-orange background color
+    color: "white", 
+    borderRadius: "5px", 
+    border: "none", 
+    cursor: "pointer", 
+    transition: 'background-color 0.3s ease, transform 0.2s ease',  // Smooth background and transform transitions
+    fontFamily: '"Roboto", sans-serif',  // Button font
+  },
+  deleteButtonHover: {
+    backgroundColor: "#D84B2A",  // Darker shade of red-orange on hover
+    transform: 'scale(1.05)',  // Slightly enlarge the button when hovered
+  },
+};
+
+// Styles for the container that holds saved cards
+export const savedCardsContainerStyles = {
+  display: "flex",
+  flexWrap: "wrap",  // Allow wrapping for responsiveness
+  gap: "20px",  // Space between saved cards
+  justifyContent: "center",  // Center the cards in the container
+  padding: "20px",
+};
+
+
 const loginStyles = {
   page: {
-    display: "flex", justifyContent: "center", alignItems: "center",
-    height: "100vh", background: "linear-gradient(to right, #74ebd5, #9face6)"
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100vh',
+    backgroundColor: '#f0f4f8',
+    fontFamily: '"Roboto", sans-serif',
+    padding: '0 20px', // Ensures padding on smaller screens
+    boxSizing: 'border-box', // Prevents shrinking due to padding
   },
   card: {
-    background: "#fff", padding: "40px", borderRadius: "12px",
-    boxShadow: "0 10px 20px rgba(0,0,0,0.1)", width: "350px", textAlign: "center"
+    backgroundColor: 'white',
+    padding: '40px',
+    borderRadius: '15px',
+    boxShadow: '0 6px 15px rgba(0, 0, 0, 0.1)',
+    width: '100%',
+    maxWidth: '400px', // Increased maxWidth to give it more space
+    textAlign: 'center',
+    transition: 'box-shadow 0.3s ease',
+    boxSizing: 'border-box', // Prevents shrinkage
+    margin: '0 auto', // Centers the card horizontally
   },
-  form: { display: "flex", flexDirection: "column", gap: "15px" },
-  input: { padding: "12px", borderRadius: "8px", border: "1px solid #ccc" },
+  cardHover: {
+    boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)',
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+    width: '100%', // Ensures form elements take full width inside the card
+  },
+  input: {
+    padding: '12px 15px',
+    fontSize: '16px',
+    border: '1px solid #ddd',
+    borderRadius: '8px',
+    margin: '10px 0',
+    outline: 'none',
+    transition: 'border-color 0.3s, box-shadow 0.3s',
+    backgroundColor: '#fafafa',
+    width: '100%', // Ensures inputs fill the available width
+    boxSizing: 'border-box', // Prevents input from shrinking due to padding
+  },
+  inputFocus: {
+    borderColor: '#007BFF',
+    boxShadow: '0 0 8px rgba(0, 123, 255, 0.3)',
+  },
   button: {
-    padding: "12px", borderRadius: "8px", backgroundColor: "#007BFF",
-    color: "white", border: "none", cursor: "pointer", fontWeight: "bold"
+    padding: '12px',
+    backgroundColor: '#007BFF',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    fontWeight: 'bold',
+    transition: 'background-color 0.3s, transform 0.2s ease-in-out',
+    width: '100%', // Ensures button fills the available width
+    boxSizing: 'border-box', // Prevents shrinking
   },
-  error: { color: "red", fontSize: "14px", marginTop: "-5px" }
+  buttonHover: {
+    backgroundColor: '#0056b3',
+    transform: 'scale(1.05)',
+  },
+  toggleText: {
+    color: '#007BFF',
+    fontSize: '14px',
+    cursor: 'pointer',
+    marginTop: '15px',
+    textDecoration: 'underline',
+  },
+  error: {
+    color: '#e74c3c',
+    fontSize: '14px',
+    marginTop: '10px',
+    textAlign: 'left',
+    fontWeight: 'bold',
+  },
+};
+
+
+
+const homePageStyles = {
+  page: {
+    padding: "20px",
+    backgroundColor: "#f9f9f9",
+  },
+  title: {
+    textAlign: "center",
+    fontSize: "35px",
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: "20px",
+  },
+  subtitle: {
+    textAlign: "center",
+    fontSize: "20px",
+    color: "#555",
+    marginBottom: "30px",
+  },
+  featuresContainer: {
+    display: "flex",
+    justifyContent: "space-around",
+    marginTop: "50px",
+    flexWrap: 'wrap', // Wrap features on smaller screens
+  },
+  feature: {
+    width: "30%",
+    textAlign: "center",
+    padding: "15px",
+    borderRadius: "8px",
+    background: "white",
+    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+  },
+  featureHover: {
+    transform: "scale(1.05)", // Slightly enlarge the box on hover
+    boxShadow: "0 6px 15px rgba(0, 0, 0, 0.2)",
+  },
 };
 
 const pageStyle = {
-  padding: "30px", textAlign: "center", fontFamily: "Arial, sans-serif"
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '20px',
+  textAlign: 'center',
+  backgroundColor: "#f9f9f9",
 };
 
 const formStyles = {
   container: {
-    display: "flex", flexDirection: "column", gap: "10px",
-    maxWidth: "500px", margin: "auto"
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '15px',
+    width: '100%',
+    maxWidth: '500px',
+    backgroundColor: 'white',
+    padding: '20px',
+    borderRadius: '10px',
+    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+    border: '2px solid #ddd',  // Add a light border for definition
+  },
+  input: {
+    padding: '12px 15px',  // Slightly larger padding for better click area
+    fontSize: '16px',
+    border: '1px solid #ddd',
+    borderRadius: '8px',  // Slightly more rounded corners
+    margin: '5px 0',  // Add space between inputs for better clarity
+    backgroundColor: '#fafafa',
+    transition: 'border-color 0.3s, box-shadow 0.3s',
+  },
+  inputFocus: {
+    borderColor: '#007BFF',  // Focus border color to indicate active state
+    boxShadow: '0 0 8px rgba(0, 123, 255, 0.3)',  // Soft glow on focus
+  },
+  textarea: {
+    padding: '12px 15px',
+    fontSize: '16px',
+    border: '1px solid #ddd',
+    borderRadius: '8px',
+    height: '100px',  // Slightly taller height for better text visibility
+    backgroundColor: '#fafafa',
+    transition: 'border-color 0.3s, box-shadow 0.3s',
+  },
+  textareaFocus: {
+    borderColor: '#007BFF',
+    boxShadow: '0 0 8px rgba(0, 123, 255, 0.3)',
   },
   button: {
-    marginTop: "10px", padding: "10px",
-    backgroundColor: "#007BFF", color: "white",
-    border: "none", borderRadius: "5px", cursor: "pointer"
-  }
+    padding: '12px',
+    backgroundColor: '#007BFF',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',  // Rounded corners for a soft look
+    cursor: 'pointer',
+    fontSize: '16px',
+    transition: 'background-color 0.3s, transform 0.2s ease-in-out',  // Smooth transition for hover
+  },
+  buttonHover: {
+    backgroundColor: '#0056b3',  // Darker blue when hovered
+    transform: 'scale(1.05)',  // Slightly enlarge the button on hover
+  },
 };
 
-const cardStyles = {
-  card: {
-    background: "#fff", padding: "15px", borderRadius: "10px",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.1)", width: "300px", textAlign: "left"
-  },
-  deleteButton: {
-    marginTop: "10px", padding: "8px", backgroundColor: "red", color: "white",
-    border: "none", borderRadius: "5px", cursor: "pointer", fontSize: "14px"
-  }
-};
 
-const homePageStyles = {
-  page: {
-    padding: "40px", textAlign: "center", fontFamily: "Arial, sans-serif", backgroundColor: "#f4f4f4"
-  },
-  title: {
-    fontSize: "2.5rem", fontWeight: "bold", color: "#333"
-  },
-  subtitle: {
-    fontSize: "1.2rem", color: "#666", marginBottom: "30px"
-  },
-  featuresContainer: {
-    display: "flex", justifyContent: "center", gap: "40px", flexWrap: "wrap"
-  },
-  feature: {
-    background: "#fff", padding: "30px", borderRadius: "10px", boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-    width: "250px", textAlign: "center"
-  }
-};
 
+
+
+/// Define styles for the About page
 const aboutPageStyles = {
   page: {
-    padding: "40px", textAlign: "center", fontFamily: "Arial, sans-serif", backgroundColor: "#f9f9f9"
+    padding: "20px",
+    backgroundColor: "#f9f9f9",
+    fontFamily: '"Roboto", sans-serif',  // Uniform font across the page
   },
   title: {
-    fontSize: "2.5rem", fontWeight: "bold", color: "#333"
+    textAlign: "center",
+    fontSize: "35px",
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: "20px",
+    fontFamily: '"Roboto", sans-serif',  // Applying consistent font
   },
   description: {
-    fontSize: "1.2rem", color: "#666", marginBottom: "40px"
+    textAlign: "center",
+    fontSize: "20px",
+    color: "#555",
+    marginBottom: "30px",
+    fontFamily: '"Roboto", sans-serif',  // Applying consistent font
   },
   featuresContainer: {
-    display: "flex", justifyContent: "center", gap: "40px", flexWrap: "wrap"
+    display: "flex",
+    justifyContent: "space-around",
+    marginTop: "30px",
+    flexWrap: "wrap", // Wrap features on smaller screens
+    gap: '20px',  // Adding space between features
   },
   feature: {
-    background: "#fff", padding: "30px", borderRadius: "10px", boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-    width: "300px", textAlign: "center"
-  }
+    width: "45%",
+    textAlign: "left",
+    padding: "20px",  // Added more padding for better spacing
+    borderRadius: "8px",
+    backgroundColor: "white",
+    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+    fontFamily: '"Roboto", sans-serif',  // Uniform font for feature text
+    border: "1px solid #ddd",  // Subtle border around the features
+  },
+  featureHover: {
+    transform: "scale(1.05)",
+    boxShadow: "0 6px 15px rgba(0, 0, 0, 0.2)",
+    border: "1px solid #007BFF",  // Change border color on hover for visual feedback
+  },
 };
+
 
 export default App;
